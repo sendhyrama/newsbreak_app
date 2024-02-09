@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "855240143099",
+    "project_id": "newsbreak-8d426",
+    "storage_bucket": "newsbreak-8d426.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:855240143099:android:f51b34df58f5e7aabc805e",
+        "android_client_info": {
+          "package_name": "com.example.newsbreak_app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBZKM7vC_-kZIwzBuBYQ3xeMsMOUs25ZCA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
