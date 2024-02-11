@@ -2,6 +2,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:newsbreak_app/home_screen.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:newsbreak_app/news_screen.dart';
 
 class Auth_Screen extends StatefulWidget {
   @override
@@ -49,7 +50,7 @@ class _Auth_ScreenState extends State<Auth_Screen> {
         password: _passwordController.text,
       );
       Navigator.of(context).pushReplacement(
-        MaterialPageRoute(builder: (context) => Home_Screen()),
+        MaterialPageRoute(builder: (context) => NewsScreen()),
       );
       // Show snackbar after successful login
       showSnackbar("Login Successful!");
