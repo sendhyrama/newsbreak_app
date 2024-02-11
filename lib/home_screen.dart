@@ -1,31 +1,122 @@
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:newsbreak_app/auth_screen.dart';
+import 'package:news_api_flutter_package/model/article.dart';
+import 'package:news_api_flutter_package/news_api_flutter_package.dart';
+import 'package:newsbreak_app/bookmark_screen.dart';
+import 'package:newsbreak_app/profile_screen.dart';
 
-class Home_Screen extends StatefulWidget {
-  const Home_Screen({Key? key}) : super(key: key);
+class HomeScreen extends StatefulWidget {
+  const HomeScreen({super.key});
 
   @override
-  _Home_ScreenState createState() => _Home_ScreenState();
+  State<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _Home_ScreenState extends State<Home_Screen> {
+class _HomeScreenState extends State<HomeScreen> {
+  late Future<List<Article>> future;
+  String? searchTerm;
+  bool isSearching = false;
+  TextEditingController searchController = TextEditingController();
+  List<String> categoryItems = [
+    "GENERAL",
+    "BUSINESS",
+    "ENTERTAINMENT",
+    "HEALTH",
+    "SCIENCE",
+    "SPORTS",
+    "TECHNOLOGY",
+  ];
+
+  late String selectedCategory;
+
+  @override
+  void initState() {
+    selectedCategory = categoryItems[0];
+    future = getNewsData();
+
+    super.initState();
+  }
+
   int _selectedIndex = 0;
 
-  final List<Widget> _pages = [
-    HomeContent(),
+  static const List<Widget> _widgetOptions = <Widget>[
+    Text(
+      'Home',
+    ),
+    Text(
+      'Bookmark',
+    ),
+    Text(
+      'Profile',
+    ),
   ];
 
   void _onItemTapped(int index) {
-    setState(() {
-      _selectedIndex = index;
-    });
+    if (index == 0) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (context) => HomeScreen()),
+      );
+    } else if (index == 1) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (context) => BookmarkScreen()),
+      );
+    } else if (index == 2) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (context) => ProfileScreen()),
+      );
+    } else {
+      setState(() {
+        _selectedIndex = index;
+      });
+    }
+  }
+
+  Future<List<Article>> getNewsData() async {
+    NewsAPI newsAPI = NewsAPI('f19e21aa42e54101bdbb00aec88e565f');
+    return await newsAPI.getTopHeadlines(
+      country: "us",
+      query: searchTerm,
+      category: selectedCategory,
+      pageSize: 50,
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: _pages[_selectedIndex],
+      appBar: isSearching ? searchAppBar() : appBar(),
+      body: SafeArea(
+          child: Column(
+        children: [
+          _buildCategories(),
+          Expanded(
+            child: FutureBuilder(
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const Center(
+                    child: CircularProgressIndicator(),
+                  );
+                } else if (snapshot.hasError) {
+                  return const Center(
+                    child: Text("Error loading the news"),
+                  );
+                } else {
+                  if (snapshot.hasData && snapshot.data!.isNotEmpty) {
+                    return _buildNewsListView(snapshot.data as List<Article>);
+                  } else {
+                    return const Center(
+                      child: Text("No news available"),
+                    );
+                  }
+                }
+              },
+              future: future,
+            ),
+          )
+        ],
+      )),
       bottomNavigationBar: BottomNavigationBar(
         items: const <BottomNavigationBarItem>[
           BottomNavigationBarItem(
@@ -33,114 +124,173 @@ class _Home_ScreenState extends State<Home_Screen> {
             label: 'Home',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.search),
-            label: 'Search',
+            icon: Icon(Icons.bookmark),
+            label: 'Bookmark',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.people),
+            icon: Icon(Icons.person),
             label: 'Profile',
           ),
         ],
         currentIndex: _selectedIndex,
-        selectedItemColor: Colors.amber[800],
+        selectedItemColor: Colors.blue,
         onTap: _onItemTapped,
       ),
     );
   }
-}
 
-class HomeContent extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(
-          "NewsBreak App",
-          style: TextStyle(fontSize: 24, fontWeight: FontWeight.w600),
-        ),
-        actions: <Widget>[
-          Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: Icon(Icons.notifications),
-          ),
-        ],
+  searchAppBar() {
+    return AppBar(
+      backgroundColor: Colors.blue,
+      leading: IconButton(
+        icon: const Icon(Icons.arrow_back),
+        onPressed: () {
+          setState(() {
+            isSearching = false;
+            searchTerm = null;
+            searchController.text = "";
+            future = getNewsData();
+          });
+        },
       ),
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Container(
-              margin: EdgeInsets.symmetric(horizontal: 16),
-              height: 50,
-              width: double.infinity,
-              decoration: BoxDecoration(
-                color: Color(0xff475BD8),
-                border: Border.all(color: Color(0xff475BD8)),
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: TextButton(
-                onPressed: () {
-                  _signOut(context);
-                  print(
-                      "User signed out: ${FirebaseAuth.instance.currentUser!.email}");
-                },
-                child: const Text(
-                  "Sign Out",
-                  style: TextStyle(
-                    color: Color(0xffffffff),
-                    fontWeight: FontWeight.w500,
-                  ),
+      title: TextField(
+        controller: searchController,
+        style: const TextStyle(color: Colors.white),
+        cursorColor: Colors.white,
+        decoration: const InputDecoration(
+          hintText: "Search",
+          hintStyle: TextStyle(color: Colors.white70),
+          enabledBorder: UnderlineInputBorder(
+            borderSide: BorderSide(color: Colors.transparent),
+          ),
+          focusedBorder: UnderlineInputBorder(
+            borderSide: BorderSide(color: Colors.transparent),
+          ),
+        ),
+      ),
+      actions: [
+        IconButton(
+            onPressed: () {
+              setState(() {
+                searchTerm = searchController.text;
+                future = getNewsData();
+              });
+            },
+            icon: const Icon(Icons.search)),
+      ],
+    );
+  }
+
+  appBar() {
+    return AppBar(
+      automaticallyImplyLeading: false,
+      backgroundColor: Colors.blue,
+      title: const Text("NewsBreak App", style: TextStyle(color: Colors.white)),
+      actions: [
+        IconButton(
+            onPressed: () {
+              setState(() {
+                isSearching = true;
+              });
+            },
+            icon: const Icon(Icons.search, color: Colors.white)),
+      ],
+    );
+  }
+
+  Widget _buildNewsListView(List<Article> articleList) {
+    return ListView.builder(
+      itemBuilder: (context, index) {
+        Article article = articleList[index];
+        return _buildNewsItem(article);
+      },
+      itemCount: articleList.length,
+    );
+  }
+
+  Widget _buildNewsItem(Article article) {
+    return InkWell(
+      onTap: () {
+        // Navigator.push to detail screen using webview
+      },
+      child: Card(
+        elevation: 4,
+        child: Padding(
+          padding: EdgeInsets.all(8),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              SizedBox(
+                height: 80,
+                width: 80,
+                child: Image.network(
+                  article.urlToImage ?? "",
+                  fit: BoxFit.fitHeight,
+                  errorBuilder: (context, error, stackTrace) {
+                    return const Icon(Icons.image_not_supported);
+                  },
                 ),
               ),
-            ),
-          ],
+              const SizedBox(width: 20),
+              Expanded(
+                  child: Column(
+                mainAxisAlignment: MainAxisAlignment.start,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    article.title!,
+                    maxLines: 2,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 18,
+                    ),
+                  ),
+                  Text(
+                    article.source.name!,
+                    style: const TextStyle(color: Colors.grey),
+                  ),
+                ],
+              ))
+            ],
+          ),
         ),
       ),
     );
   }
-}
 
-TextStyle positionText() {
-  return TextStyle(color: Colors.grey, fontWeight: FontWeight.w400);
-}
-
-TextStyle subTitle() => TextStyle(fontWeight: FontWeight.w500);
-
-TextStyle titleStyle() {
-  return TextStyle(fontSize: 15, fontWeight: FontWeight.w700);
-}
-
-Future<void> _signOut(BuildContext context) async {
-  try {
-    await FirebaseAuth.instance.signOut();
-    // Navigate to the login or authentication screen after sign-out
-    Navigator.pushReplacement(
-        context, MaterialPageRoute(builder: (context) => Auth_Screen()));
-
-    // Show snackbar after successful sign-out
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text("Signed Out!"),
-        behavior: SnackBarBehavior.floating,
-        duration: Duration(seconds: 3),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(10),
-        ),
-      ),
-    );
-  } catch (e) {
-    // Handle sign-out errors
-    print("Error signing out: $e");
-
-    // Show snackbar for sign-out failure
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text("Sign Out failed: $e"),
-        behavior: SnackBarBehavior.floating,
-        duration: Duration(seconds: 3),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(10),
-        ),
+  Widget _buildCategories() {
+    return SizedBox(
+      height: 60,
+      child: ListView.builder(
+        itemBuilder: (context, index) {
+          return Padding(
+            padding: const EdgeInsets.all(8),
+            child: ElevatedButton(
+              onPressed: () {
+                setState(() {
+                  selectedCategory = categoryItems[index];
+                  future = getNewsData();
+                });
+              },
+              style: ButtonStyle(
+                  backgroundColor: MaterialStateProperty.all<Color>(
+                categoryItems[index] == selectedCategory
+                    ? Colors.blue
+                    : Colors.white54,
+              )),
+              child: Text(
+                categoryItems[index],
+                style: TextStyle(
+                  color: selectedCategory == categoryItems[index]
+                      ? Colors.white
+                      : Colors.black,
+                ),
+              ),
+            ),
+          );
+        },
+        itemCount: categoryItems.length,
+        scrollDirection: Axis.horizontal,
       ),
     );
   }

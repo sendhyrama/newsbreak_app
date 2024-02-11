@@ -2,14 +2,13 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:newsbreak_app/home_screen.dart';
 import 'package:firebase_core/firebase_core.dart';
-import 'package:newsbreak_app/news_screen.dart';
 
-class Auth_Screen extends StatefulWidget {
+class AuthScreen extends StatefulWidget {
   @override
-  _Auth_ScreenState createState() => _Auth_ScreenState();
+  _AuthScreenState createState() => _AuthScreenState();
 }
 
-class _Auth_ScreenState extends State<Auth_Screen> {
+class _AuthScreenState extends State<AuthScreen> {
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   final FirebaseAuth _auth = FirebaseAuth.instance;
@@ -50,7 +49,7 @@ class _Auth_ScreenState extends State<Auth_Screen> {
         password: _passwordController.text,
       );
       Navigator.of(context).pushReplacement(
-        MaterialPageRoute(builder: (context) => NewsScreen()),
+        MaterialPageRoute(builder: (context) => HomeScreen()),
       );
       // Show snackbar after successful login
       showSnackbar("Login Successful!");
